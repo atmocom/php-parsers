@@ -636,10 +636,5 @@ abstract class Params
 	const PRECIPYEAR = 24;
 	const ABSBARO = 25;
     const FIRMWARE_REV = 26;
-    // const RESERVED1 = 27;
-    // const RESERVED2 = 28;
-    // const RESERVED3 = 29;
-    // const RESERVED4 = 30;
-    // const RESERVED5 = 31;
 }
 ?>
