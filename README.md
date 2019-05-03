@@ -37,7 +37,6 @@ ATMOCOM parser function test -- Wed, 01 May 2019 12:32:43 +0200
 
 SUCCESS! All tests passed, you are good to go!
 ```
-
 In case any of the steps fail please review your web space file and directory permissions and that SQLite functions are in fact enabled. If needed contact your web hosting provider technical support who should be able to help you sort out any issues.
 
-With the script installation completed you can now configure ATMOCOM to replicate weather station readings to the atmolog.php script. For ATMOCOM configuration specifics please refer to the user manual. Once the entire setup is configured your weather data will be saved in SQLite archives on your website. Additionally a data file is generated which contains current and cumulative data that various third party applications such as weather templates can use for their display.
+With the script installation completed you can now configure ATMOCOM to replicate weather station readings to the atmolog.php script. For ATMOCOM configuration specifics please refer to the user manual. Once the entire setup is configured your weather data will be saved in SQLite archives on your website. Additionally a data file is generated which contains current and cumulative weather data that various third party applications such as weather templates can use for display.
