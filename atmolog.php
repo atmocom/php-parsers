@@ -96,6 +96,10 @@ function setValue($param)
 	else if(!strcasecmp($param[0], "baromin"))
 	{
 		$data_array[Params::BARO] = conv_inHg_hPa($param[1]);
+    }
+	else if(!strcasecmp($param[0], "absbaromin"))
+	{
+		$data_array[Params::ABSBARO] = conv_inHg_hPa($param[1]);
 	}
 	else if(!strcasecmp($param[0], "tempf"))
 	{
@@ -119,7 +123,8 @@ function setValue($param)
 	}
 	else if(!strcasecmp($param[0], "winddir"))
 	{
-		$data_array[Params::WINDDIR] = floatval($param[1]);
+        $data_array[Params::WINDDIR] = floatval($param[1]);
+        $data_array[Params::WGUSTDIR] = floatval($param[1]);
 	}
 	else if(!strcasecmp($param[0], "windgustdir"))
 	{
@@ -473,7 +478,7 @@ function insert_db($rec)
 		$stmt->bindValue(25, $rec[Params::PRECIPWEEK], PDO::PARAM_STR);		
 		$stmt->bindValue(26, $rec[Params::PRECIPMON], PDO::PARAM_STR);		
 		$stmt->bindValue(27, $rec[Params::PRECIPYEAR], PDO::PARAM_STR);		
-		$stmt->bindValue(28, $rec[Params::RESERVED], PDO::PARAM_STR);
+		$stmt->bindValue(28, $rec[Params::ABSBARO], PDO::PARAM_STR);
 		$stmt->bindValue(29, $firmware_rev, PDO::PARAM_STR);				
 		$stmt->execute();
         $db->commit();
@@ -497,7 +502,7 @@ function create_db()
 		try {
 			$db = new PDO('sqlite:' . $dbFile);
 			$db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-			$db->exec( "CREATE TABLE IF NOT EXISTS wxdata (ID integer primary key, STATIONID text, DATE text, TIME text, UTC real, TEMP real, DEWPT real, RHUM real, BARO real, WINDDIR real, WINDVEL real, WGUSTDIR real, WGUSTVEL real, PRECIP real, PRECIPDAY real, UVIDX real, SOLAR real, INTEMP real, INRHUM real, SOILTEMP real, SOILMOIST real, LEAFWET real, WEATHER text, CLOUDS text, VISNM real, PRECIPWEEK real, PRECIPMON real, PRECIPYEAR real, RESERVED real, FIRMWARE_REV text)" );
+            $db->exec( "CREATE TABLE IF NOT EXISTS wxdata (ID integer primary key, STATIONID text, DATE text, TIME text, UTC real, TEMP real, DEWPT real, RHUM real, BARO real, WINDDIR real, WINDVEL real, WGUSTDIR real, WGUSTVEL real, PRECIP real, PRECIPDAY real, UVIDX real, SOLAR real, INTEMP real, INRHUM real, SOILTEMP real, SOILMOIST real, LEAFWET real, WEATHER text, CLOUDS text, VISNM real, PRECIPWEEK real, PRECIPMON real, PRECIPYEAR real, ABSBARO real, FIRMWARE_REV text)" );
 			$db = null;
 		}
 		catch(PDOException $e) {
@@ -629,7 +634,12 @@ abstract class Params
 	const PRECIPWEEK = 22;
 	const PRECIPMON = 23;
 	const PRECIPYEAR = 24;
-	const RESERVED = 25;
-	const FIRMWARE_REV = 26;
+	const ABSBARO = 25;
+    const FIRMWARE_REV = 26;
+    // const RESERVED1 = 27;
+    // const RESERVED2 = 28;
+    // const RESERVED3 = 29;
+    // const RESERVED4 = 30;
+    // const RESERVED5 = 31;
 }
 ?>
