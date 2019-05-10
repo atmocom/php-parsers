@@ -4,10 +4,10 @@
 //No need to modify anything in this file
 require 'atmolog_cfg.php';
 
-// set the default timezone if not set at php.ini
+// set the default timezone if not set in php.ini
 if(!ini_get('date.timezone') )
 {
-    date_default_timezone_set('GMT');
+    date_default_timezone_set('UTC');
 }
 
 $dbFile = $dataFolder . "wx". date("Ym"). ".db"; 
