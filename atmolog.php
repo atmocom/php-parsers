@@ -4,7 +4,7 @@
 //No need to modify anything in this file
 require 'atmolog_cfg.php';
 
-// set the default timezone if not set in php.ini
+// set the default timezone if not set at php.ini
 if(!ini_get('date.timezone') )
 {
     date_default_timezone_set('UTC');
@@ -46,8 +46,6 @@ if(!isset($data)) die();
 if (strpos($data, 'updateweatherstation.php') === false) die();
 
 if(!isset($firmware_rev)) $firmware_rev='0x0';
-
-//create_db();
 
 //Split query string into two where 2nd part should hold wx data
 $qstr = explode("?", $data);
@@ -91,7 +89,7 @@ function setValue($param)
 	
 	if(!strcasecmp($param[0], "ID"))
 	{
-		$data_array[Params::STATIONID] = $param[1];
+		$data_array[Params::STATIONID] = strtoupper($param[1]);
 	}
 	else if(!strcasecmp($param[0], "baromin"))
 	{
@@ -265,7 +263,6 @@ function wind_dir_avg($warr)
 
 function update_wxdata_file($rec)
 {
-	//TODO: add temp max+min time and trend, baro max+min time and trend 
 	global $wxdata_dir, $wxdata_file, $dateFormat, $timeFormat, $firmware_rev;
 
 	//set units
@@ -279,7 +276,8 @@ function update_wxdata_file($rec)
 	}
 	
 	//Load file and parse. If it doesn't exist then create new
-	$station_wxfile = $rec[Params::STATIONID] . $wxdata_file;
+	//Files are all lowercase
+	$station_wxfile = strtolower($rec[Params::STATIONID]) . $wxdata_file;
 	$sep = ":";
 	$crlf = PHP_EOL;
 	$epoch = strtotime(date($dateFormat . ' ' . $timeFormat));
@@ -290,10 +288,11 @@ function update_wxdata_file($rec)
 		
 		//Generate file contents. Min, max and all times are set to current values
 		$fstr = '### AUTO-GENERATED, DO NOT MODIFY! ###' . $crlf;
-		$fstr = 'stamp:0' . $sep . $epoch . $sep . date('Y:m:d') . $sep . strtoupper($rec[Params::STATIONID]);
+		$fstr = 'stamp:0' . $sep . $epoch . $sep . date('Y:m:d') . $sep . $rec[Params::STATIONID];
 		$fstr .= $sep . $unitStr . $sep . $firmware_rev . $crlf;
 
-		$fstr .= "wind:" . $rec[Params::WINDDIR] . $sep . $rec[Params::WINDVEL] . $sep . $rec[Params::WINDDIR] . $sep . $rec[Params::WGUSTVEL] . $sep . $rec[Params::WINDDIR] . $crlf;
+		//$fstr .= "wind:" . $rec[Params::WINDDIR] . $sep . $rec[Params::WINDVEL] . $sep . $rec[Params::WINDDIR] . $sep . $rec[Params::WGUSTVEL] . $sep . $rec[Params::WINDDIR] . $crlf;
+		$fstr .= "wind:" . $rec[Params::WINDDIR] . $sep . $rec[Params::WINDVEL] . $sep . $rec[Params::WINDDIR] . $sep . $rec[Params::WGUSTVEL] . $sep . $rec[Params::WINDDIR] . $sep . $rec[Params::WGUSTVEL] . $sep . $epoch . $crlf;
 		$fstr .= "otemp:" . $rec[Params::TEMP] . $sep . $rec[Params::TEMP] . $sep . $rec[Params::TEMP] . $sep . $epoch . $sep . $epoch . $sep . "0" . $crlf;
 		$fstr .= "itemp:" . $rec[Params::INTEMP] . $sep . $rec[Params::INTEMP] . $sep . $rec[Params::INTEMP] . $crlf;
 		$fstr .= "dewpt:" . $rec[Params::DEWPT] . $sep . $rec[Params::DEWPT] . $sep . $rec[Params::DEWPT] . $crlf;
@@ -314,6 +313,7 @@ function update_wxdata_file($rec)
 		$fstr = '### AUTO-GENERATED, DO NOT MODIFY! ###' . $crlf;
 
 		$pdate = array();
+		$day_chg = false;
 		foreach($farr as $ln)
 		{
 			if(isValidData($ln))
@@ -322,11 +322,14 @@ function update_wxdata_file($rec)
 
 				if(strcmp($data[0], "stamp") === 0)
 				{
-					$pdate[0] = $data[3];
-					$pdate[1] = $data[4];
-					$pdate[2] = $data[5];
+					$pdate[0] = $data[3]; //Year
+					$pdate[1] = $data[4];	//Month
+					$pdate[2] = $data[5];	//Day
+
+					$day_chg = ( $pdate[2] != date('d') );
+
 					$seq = $data[1]+1;
-					$fstr = 'stamp' . $sep . $seq . $sep . $epoch . $sep . date('Y:m:d') . $sep . strtoupper($rec[Params::STATIONID]);
+					$fstr = 'stamp' . $sep . $seq . $sep . $epoch . $sep . date('Y:m:d') . $sep . $rec[Params::STATIONID];
 					$fstr .= $sep . $unitStr . $sep . $firmware_rev . $crlf;
 				}
 				else if(strcmp($data[0], "wind") === 0) //Wind dir, gust and velocities
@@ -339,7 +342,23 @@ function update_wxdata_file($rec)
 					$data[2] = $rec[Params::WINDVEL];
 					$data[3] = $rec[Params::WINDDIR]; //Wind gust direction not supplied by most PWS, set equal to main direction
 					$data[4] = $rec[Params::WGUSTVEL];
-					$fstr .= "wind:" . $data[1] . $sep . $data[2] . $sep . $data[3] . $sep . $data[4] . $sep . $data[5] . $crlf;
+
+					//Added max wind gust and time of event (20190519)
+					//If old format with 5 fields then just add fields 6 & 7
+					if(count($data) > 5)
+					{
+						if($data[6] <= $rec[Params::WGUSTVEL] || $day_chg)
+						{
+							$data[6] = $rec[Params::WGUSTVEL];
+							$data[7] = $epoch;
+						}
+					}
+					else {
+						$data[6] = $rec[Params::WGUSTVEL];
+						$data[7] = $epoch;
+					}
+
+					$fstr .= "wind:" . $data[1] . $sep . $data[2] . $sep . $data[3] . $sep . $data[4] . $sep . $data[5] . $sep . $data[6] . $sep . $data[7] . $crlf;
 				}				
 				else if(strcmp($data[0], "otemp") === 0) //Outdoor temps 
 				{
@@ -348,11 +367,12 @@ function update_wxdata_file($rec)
 					if(abs($temp_trend) < $minChgTemp) $temp_trend=0;
 
 					//Set new temp, adjust max/min and max time (field 4)/min time (field 5)
-					if($rec[Params::TEMP] > $data[2]) {
+					//Reset on change of day
+					if($rec[Params::TEMP] > $data[2] || $day_chg) {
 						$data[2] = $rec[Params::TEMP];
 						$data[4] = $epoch;
 					}
-					if($rec[Params::TEMP] < $data[3]) {
+					if($rec[Params::TEMP] < $data[3] || $day_chg) {
 						$data[3] = $rec[Params::TEMP];
 						$data[5] = $epoch;
 					}
@@ -393,11 +413,11 @@ function update_wxdata_file($rec)
 					if(abs($baro_trend) < $minChgBaro) $baro_trend=0;
 
 					//Set new barometer pressure, adjust max/min and max time (field 4)/min time (field 5)
-					if($rec[Params::BARO] > $data[2]) {
+					if($rec[Params::BARO] > $data[2] || $day_chg) {
 						$data[2] = $rec[Params::BARO];
 						$data[4] = $epoch;
 					}
-					if($rec[Params::BARO] < $data[3]) {
+					if($rec[Params::BARO] < $data[3] || $day_chg) {
 						$data[3] = $rec[Params::BARO];
 						$data[5] = $epoch;
 					}
@@ -413,17 +433,17 @@ function update_wxdata_file($rec)
 				else if(strcmp($data[0], "precip") === 0) //Precipitation
 				{
 					//if day has changed since last write, move field #2 (today) to #3 (yesterday)
-					if($pdate[2] != date("d"))
+					if($day_chg)
 					{
 						//Rain yesterday
 						$data[3] = $data[2];
 					}
 
-					$data[1] = $rec[Params::PRECIP]; 		//rate
-					$data[2] = $rec[Params::PRECIPDAY];		//rain today
-					$data[4] = $rec[Params::PRECIPWEEK];	//rain this week
-					$data[5] = $rec[Params::PRECIPMON];		//rain this month
-					$data[6] = $rec[Params::PRECIPYEAR];	//rain this year
+					$data[1] = $rec[Params::PRECIP];     //rate
+					$data[2] = $rec[Params::PRECIPDAY];  //rain today
+					$data[4] = $rec[Params::PRECIPWEEK]; //rain this week
+					$data[5] = $rec[Params::PRECIPMON];  //rain this month
+					$data[6] = $rec[Params::PRECIPYEAR]; //rain this year
 
 					$fstr .= "precip:" . $data[1] . $sep . $data[2] . $sep . $data[3] . $sep . $data[4] . $sep . $data[5] . $sep . $data[6] . $crlf;
 				} // precip
@@ -449,7 +469,7 @@ function insert_db($rec)
 		// Start transaction
 		$db->beginTransaction();
 		
-		$stmt->bindValue(1, $rec[Params::STATIONID], PDO::PARAM_STR);
+		$stmt->bindValue(1, strtoupper($rec[Params::STATIONID], PDO::PARAM_STR));
 		$stmt->bindValue(2, date($dateFormat), PDO::PARAM_STR);
 		$stmt->bindValue(3, date($timeFormat), PDO::PARAM_STR);
 		$stmt->bindValue(4, (date('Z')/60), PDO::PARAM_STR);
@@ -481,9 +501,9 @@ function insert_db($rec)
 		$stmt->bindValue(28, $rec[Params::ABSBARO], PDO::PARAM_STR);
 		$stmt->bindValue(29, $firmware_rev, PDO::PARAM_STR);				
 		$stmt->execute();
-        $db->commit();
-        $stmt=null;
-        $db=null;
+		$db->commit();
+		$stmt=null;
+		$db=null;
 
 	} catch(PDOException $e) {
 		//echo $e->getMessage();
@@ -635,6 +655,6 @@ abstract class Params
 	const PRECIPMON = 23;
 	const PRECIPYEAR = 24;
 	const ABSBARO = 25;
-    const FIRMWARE_REV = 26;
+  const FIRMWARE_REV = 26;
 }
 ?>
