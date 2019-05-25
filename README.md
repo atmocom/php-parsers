@@ -1,5 +1,5 @@
 # php-parsers
-**atmolog.php** (and accompanying **atmolog_cfg.php**) replaces **acpwu.php** as main data parser and DB storage script. New users should * ***not*** * use acpwu.php. For existing installations, **atmolog.php** is drop-in replacable after modifying **atmolog_cfg.php** passkey variable.
+**atmolog.php** (and accompanying **atmolog_cfg.php**) is the main data parser and DB storage script.
 
 ## Installation
 ### 1. Changing passkey
