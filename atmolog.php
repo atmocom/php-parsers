@@ -1,6 +1,6 @@
  <?php
 
-//All configuration is conveniently done in acpwu2_config.php
+//All configuration is conveniently done in atmolog_cfg.php
 //No need to modify anything in this file
 require 'atmolog_cfg.php';
 
